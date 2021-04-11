@@ -3,5 +3,5 @@ class Day {
     public:
 
     private:
-    
+
 };
