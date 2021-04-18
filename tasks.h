@@ -6,10 +6,6 @@ using namespace std;
 
 // test
 // function to convert user inputted time to time_t structure
-
-// all inputs will be strings     scin == strings
-
-// testing getting time value from user
 time_t user_totime(string date, string time){
     char* year, *month, *day, *hour, *min;
     const char * dt = date.c_str();
@@ -28,50 +24,21 @@ time_t user_totime(string date, string time){
     min = strtok_r(temp2, ":", &temp2);
 
     time_t rawtime;
-    struct tm * timeinfo;
-    /* get current timeinfo and modify it to the user's choice */
-    time(&rawtime);
-    timeinfo = localtime ( &rawtime );
-    timeinfo->tm_year = atoi(year -1900);
-    timeinfo->tm_mon = atoi(month - 1);
+    struct tm * timeinfo = localtime( &rawtime );
+    timeinfo->tm_year = atoi(year) - 1900;
+    timeinfo->tm_mon = atoi(month) -1 ;
     timeinfo->tm_mday = atoi(day);
-    timeinfo->tm_hour = atoi(hour);
+    timeinfo->tm_hour = atoi(hour)- 1;
     timeinfo->tm_min = atoi(min);
 
-  /* call mktime: timeinfo->tm_wday will be set */
+  // mktime till convert tm to time_t variable
 
     time_t converted;
     converted = mktime (timeinfo);
     return converted;
 }
 
-//
-
-
-
-
-
-time_t user_totime(string givendeadline){
-  int yyyy, month, day, hh, mm, ss;
-
-  struct tm when = {0};
-
-  sscanf(givendeadline, "%d-%d-%d %d:%d:%d", &yyy, &month, &day, &hh, &mm, &ss)
-
-  when.tm_year = (yyyy - 1900);
-  when.tm_mon = month;
-  when.tm_mday = day;
-  when.tm_hour = hh;
-  when.tm_min = mm;
-  when.tm_sec = ss;
-
-
-  time_t converted;
-  converted = mktime(&when);
-  return converted;
-}
-
-
+// all inputs will be strings     scin == strings
 
 class Task{
     
