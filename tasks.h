@@ -91,9 +91,10 @@ Task::Task(){
   deadlineTime = user_totime(userdeadlinedate, userdeadlinetime);  //string to time_t variable
 
 
-  remainingTime = deadlineTime - currentTime; // once user clicks the checkbox the remaining time should be calculated
-
   pointsAwarded = 100; // base amount of points awarded
+  
+  // once user clicks the checkbox to mark the task as complete the remaining time should be calculated and points awarded to user
+  remainingTime = deadlineTime - currentTime; 
   
   if(complete == true  && pointsgiven == false){
       //Add points to user Profile class, use userprofile points as nameholder for now
