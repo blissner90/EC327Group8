@@ -5,6 +5,25 @@
 using namespace std;
 
 // test
+// bonus points based on remaining time value
+
+int bonus_points(time_t timeleft){
+  int bonus;
+  double calculate;
+  if (timeleft <= 0){
+    bonus = 0;
+  } else {
+    calculate = timeleft/3600; // to get in terms of hours
+    cout << calculate << "\n";
+    for (int i = 0; i < calculate; i++){
+      bonus = i * 5; //5 points per hour before assigned deadline
+    }
+  }
+
+  return bonus;
+
+}
+
 // function to convert user inputted time to time_t structure
 time_t user_totime(string date, string time){
     char* year, *month, *day, *hour, *min;
@@ -75,7 +94,11 @@ Task::Task(){
   remainingTime = deadlineTime - currentTime; // once user clicks the checkbox the remaining time should be calculated
 
   pointsAwarded = 100; // base amount of points awarded
-
+  
+  if(complete == true  && pointsgiven == false){
+      //Add points to user Profile class, use userprofile points as nameholder for now
+      userprofilepoints = pointsAwarded + bonuspoints(remainingTime);
+  }
 
 
 }
