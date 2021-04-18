@@ -24,13 +24,14 @@ Button::Button(float x, float y, float width, float height,
 
 		}
 
-void Button::makeButton(sf::RenderTarget * target)
+void Button::drawButton(sf::RenderTarget& target) const
 		{
-			target->draw(this->shape);
-			target->draw(this->text);
+			// target->draw(this->shape);
+			// target->draw(this->text);
+			target.draw(shape);
 		}
 
-void updateButton(const sf::Vector2f mousePos)
+void Button::updateButton(const sf::Vector2f mousePos)
 		{
 			this->buttonState = idleButton;
 
@@ -62,7 +63,7 @@ void updateButton(const sf::Vector2f mousePos)
 			
 		}
 
-const bool isClicked() const;
+const bool Button::isClicked() const;
 		{
 			if(this->stateButton == activeButton) {
 				return true;

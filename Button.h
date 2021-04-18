@@ -32,7 +32,7 @@ class Button:public sf::Drawable{
 
 
 		//Methods
-		void drawButton(sf::RenderTarget& target, sf::RenderStates states) const;
+		void drawButton(sf::RenderTarget& target) const;
 		void updateButton(const sf::Vector2f mousePos);
 
 		const bool isClicked() const;
