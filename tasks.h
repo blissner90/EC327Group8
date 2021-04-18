@@ -44,12 +44,15 @@ class Task{
     
     public:
         string taskName;
-        string userdeadline; 
+        string userdeadlinedate;
+        string userdeadlinetime;
+        string strexpectedLength;
         time_t currentTime;
         time_t deadlineTime;
         time_t remainingTime;
         int expectedLength;
         bool complete = false;
+        bool pointsgiven = false; //check if the points have already been given
 
     private:
         int pointsAwarded; // user shouldn't be able to determine thier own point gain
@@ -59,18 +62,18 @@ class Task{
 Task::Task(){
   scin >> taskName; // give the name of the task
 
-  scin >> expectedLength;  // how long you expect it to take in minutes
-  expectedLength = stoi(expectedLength); // turn string into integer
+  scin >> strexpectedLength;  // string for how long you expect it to take in minutes
+  expectedLength = stoi(expectedLength); // turn string into integer value that can be used
+  expectedLength = expectedLength * 60; //user gives time in minutes, task converts to seconds for use in time_t structures
       
-  scin >> userdeadline;  // user inputs a string in a certain format; ex: 12:45:07
-
-  deadlineTime = user_totime(userdeadline);  //string to time_t variable
+  scin >> userdeadlinedate; // user inputs a string in a certain format; example: Year-Month-Day -> 2021-4-18
+  scin >> userdeadlinetime; // user inputs the string in a certain format; example: Hour:Minute -> 12:45
+    
+  deadlineTime = user_totime(userdeadlinedate, userdeadlinetime);  //string to time_t variable
 
 
   remainingTime = deadlineTime - currentTime; // once user clicks the checkbox the remaining time should be calculated
 
-
-  expectedLength = expectedLength * 60; //user gives time in minutes conversion to seconds
   pointsAwarded = 100; // base amount of points awarded
 
 
