@@ -10,12 +10,12 @@
 #include<SFML/Graphics.hpp>
 #include<SFML/Audio.hpp>
 
-enum stateButton(idleButton = 0, hoverButton, activeButton);
 
-class Button
+
+class Button:public sf::Drawable{
 	{
 		private:
-			short unsigned stateButton;
+			enum stateButton{idleButton = 0, hoverButton, activeButton};
 
 			sf::RectangleShape shape;
 			// sf::Font* font;
@@ -32,9 +32,11 @@ class Button
 
 
 		//Methods
-		void makeButton(sf::RenderTarget* target);
+		void drawButton(sf::RenderTarget& target, sf::RenderStates states) const;
 		void updateButton(const sf::Vector2f mousePos);
 
 		const bool isClicked() const;
 
-	}
+	};
+};
+	#endif
