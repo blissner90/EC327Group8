@@ -12,7 +12,7 @@
 
 
 
-class Button:public sf::Drawable{
+class Button:public sf::Drawable {
 	{
 		private:
 			enum stateButton{idleButton = 0, hoverButton, activeButton};
