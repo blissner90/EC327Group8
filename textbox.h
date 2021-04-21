@@ -2,6 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <sstream>
 
+#define LBUTTON 1
 #define DELETE_KEY 8
 #define ENTER_KEY 13
 #define ESCAPE_KEY 27
@@ -12,7 +13,7 @@ class Textbox {
 
         Textbox(int size, sf::Color color, bool sel) { // Defines the inputs for the textbox
             textbox.setCharacterSize(size);
-            textbox.setColor(color);
+            textbox.setFillColor(color);
             isSelected = sel;
             if (sel) {
                 textbox.setString("_");
@@ -77,12 +78,42 @@ class Textbox {
                 }
             }
         }
+
+        sf::RectangleShape setTextField(){
+            sf::Vector2f pos = textbox.getPosition();
+            textfield.setPosition(pos);
+            textfield.setSize(sf::Vector2f(200,40));
+            textfield.setFillColor(sf::Color::White);
+
+            textfield.setOutlineThickness(5);
+            textfield.setOutlineColor(sf::Color::Black);
+            return textfield;
+        }
+
+        bool isMouseOver(sf::RenderWindow &window, sf::RectangleShape textboxrect){
+            textfield = textboxrect;
+            float mouseX = sf::Mouse::getPosition(window).x;
+            float mouseY = sf::Mouse::getPosition(window).y;
+
+            float fieldPosX = textfield.getPosition().x;
+            float fieldPosY = textfield.getPosition().y;
+
+            float fieldxPosWidth = textfield.getPosition().x + textfield.getLocalBounds().width;
+            float fieldyPosHeight = textfield.getPosition().y + textfield.getLocalBounds().height;
+
+            if (mouseX < fieldxPosWidth && mouseX > fieldPosX && mouseY < fieldyPosHeight && mouseY > fieldPosY && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+                return true;
+            }
+            return false;
+        }
     private:
         sf::Text textbox;
         std::ostringstream text;
+        sf::RectangleShape textfield;
         bool isSelected = false;
         bool hasLimit = false;
         int limit;
+
 
         void inputLogic(int charTyped) { // Get input from the user
             if(charTyped != DELETE_KEY && charTyped != ENTER_KEY && charTyped != ESCAPE_KEY){
