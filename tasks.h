@@ -9,9 +9,6 @@
 
 using namespace std;
 
-
-
-
 // all inputs will be strings     scin == strings
 
 class Task{
@@ -20,12 +17,12 @@ class Task{
         string taskName;
         string userdeadlinedate;
         string userdeadlinetime;
-        string strexpectedLength;
-        string strCountdown;
+        //string strexpectedLength;
+        //string strCountdown;
         time_t currentTime;
         time_t deadlineTime;
         time_t remainingTime;
-        int expectedLength;
+        //int expectedLength;
         bool complete = false;
         bool pointsgiven = false; //check if the points have already been given
 
@@ -37,6 +34,7 @@ class Task{
         time_t user_totime(string date, string time);
         void renameTask();
         void newdeadLine();
+        void setTask();
 
     private:
         int pointsAwarded;
@@ -49,21 +47,33 @@ class Task{
 
 //basic constructor of task class
 Task::Task(){
-  scin >> taskName; // give the name of the task
+  //scin >> taskName; // give the name of the task
 
-  scin >> strexpectedLength;  // string for how long you expect it to take in minutes
-  expectedLength = stoi(strexpectedLength); // turn string into integer value that can be used
-  expectedLength = expectedLength * 60; //user gives time in minutes, task converts to seconds for use in time_t structures
+  //scin >> strexpectedLength;  // string for how long you expect it to take in minutes
+  //expectedLength = stoi(strexpectedLength); // turn string into integer value that can be used
+  //expectedLength = expectedLength * 60; //user gives time in minutes, task converts to seconds for use in time_t structures
       
-  scin >> userdeadlinedate; // user inputs a string in a certain format; example: Year-Month-Day -> 2021-4-18
-  scin >> userdeadlinetime; // user inputs the string in a certain format; example: Hour:Minute -> 12:45
+  //scin >> userdeadlinedate; // user inputs a string in a certain format; example: Year-Month-Day -> 2021-4-18
+  //scin >> userdeadlinetime; // user inputs the string in a certain format; example: Hour:Minute -> 12:45
     
-  deadlineTime = user_totime(userdeadlinedate, userdeadlinetime);  //string to time_t variable
+  //deadlineTime = user_totime(userdeadlinedate, userdeadlinetime);  //string to time_t variable
   pointsAwarded = 100; // base amount of points awarded
  
 }
+
+
+//name the class and give the deadlines
+void Task::setTask(){
+  cin >> userdeadlinedate;   // Year-Month-Day -> 2021-4-18
+  cin >> userdeadlinetime;    // Hour:Minute -> 12:45
+
+  deadlineTime = user_totime(userdeadlinedate, userdeadlinetime);  //string to time_t variable
+
+}
+
+
 //get how much time is left until the task deadline in terms of hours
-Task::countdownTime(){
+void Task::countdownTime(){
     float intCountdown;
     currentTime = time(NULL);
     remainingTime = deadlineTime - currentTime;
@@ -72,7 +82,8 @@ Task::countdownTime(){
     strCountdown = to_string(intCountdown);
 }
 
-Task::updateUserPoints(){
+//call the User class to update user points
+void Task::updateUserPoints(){
     currentTime = time(NULL);
     remainingTime = deadlineTime - currentTime; 
     if(complete == true  && pointsgiven == false){
@@ -85,12 +96,12 @@ Task::updateUserPoints(){
 }
 
 //upon clicking the box to checkoff task, this will update task status to complete and give user points
-Task::taskStatus(click event){
+void Task::taskStatus(){
   complete = true;
   updateUserPoints();
 }
 //converts 2 user inputted strings into a time_t structure
-Task::user_totime(string date, string time){
+time_t Task::user_totime(string date, string time){
     char* year, *month, *day, *hour, *min;
     const char * dt = date.c_str();
     const char * tm = time.c_str();
@@ -122,18 +133,18 @@ Task::user_totime(string date, string time){
     return converted;
 }
 
-Task::renameTask(){
-  scin >> taskName;
+void Task::renameTask(){
+  cin >> taskName;
 }
 
-Task::newdeadLine(){
-  scin >> userdeadlinedate; // user inputs a string in a certain format; example: Year-Month-Day -> 2021-4-18
-  scin >> userdeadlinetime; // user inputs the string in a certain format; example: Hour:Minute -> 12:45
+void Task::newdeadLine(){
+  cin >> userdeadlinedate; // user inputs a string in a certain format; example: Year-Month-Day -> 2021-4-18
+  cin >> userdeadlinetime; // user inputs the string in a certain format; example: Hour:Minute -> 12:45
     
   deadlineTime = user_totime(userdeadlinedate, userdeadlinetime);
 }
 
-Task::bonus_points(time_t timeleft){
+int Task::bonus_points(time_t timeleft){
   int bonus;
   double calculate;
   if (timeleft <= 0){
