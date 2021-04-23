@@ -37,7 +37,7 @@ class Textbox {
 
         void setLimit(bool ToF, int lim) {
             hasLimit = ToF;
-            limit = lim;
+            limit = lim-1;
         }
 
         void setSelected(bool sel) {
@@ -45,10 +45,13 @@ class Textbox {
             if(!sel) {
                 std::string t = text.str();
                 std::string newT = "";
-                for (int i = 0; i < t.length() -1; i++) {
+                for (int i = 0; i < t.length(); i++) {
                     newT += t[i];
                 }
                 textbox.setString(newT);
+            }
+            else if(text.str().length() == 0){
+                textbox.setString("_");
             }
         }
 
@@ -104,8 +107,13 @@ class Textbox {
             if (mouseX < fieldxPosWidth && mouseX > fieldPosX && mouseY < fieldyPosHeight && mouseY > fieldPosY && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
                 return true;
             }
+            // else if (sf::Mouse::isButtonPressed(sf::Mouse::Left)){
+            //     return false;
+            // }
             return false;
         }
+
+        
     private:
         sf::Text textbox;
         std::ostringstream text;

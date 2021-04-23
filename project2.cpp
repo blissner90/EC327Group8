@@ -685,6 +685,7 @@ void loadFirstTimeUser() {
   firstName.setLimit(true,10);
   firstName.setPosition({100, 100});
   sf::RectangleShape textfield = firstName.setTextField(); // Shape of textbox field follows where the firstName position is
+  // textfield.setSize(sf::Vector2f(100,100)); // Set size of textbox field
 
   // Setting up window
   RectangleShape basicOutline(sf::Vector2f(windowLength, windowWidth));
@@ -711,7 +712,7 @@ void loadFirstTimeUser() {
     if (firstName.isMouseOver(mainWindow, textfield)){ //Only can select the textbox if within region
       firstName.setSelected(true);
     }
-    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){  //Deselect but it is broken if there is no text
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter) || (!firstName.isMouseOver(mainWindow, textfield) && sf::Mouse::isButtonPressed(sf::Mouse::Left))){  //Deselect but it is broken if there is no text
       firstName.setSelected(false);
     }
 
