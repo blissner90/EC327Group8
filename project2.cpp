@@ -681,11 +681,16 @@ void loadFirstTimeUser() {
   sf::Font font; 
   font.loadFromFile("fonts/NewYork.ttf");
   Textbox firstName(30,sf::Color::Black, false);
+  Textbox lastName(30,sf::Color::Black,false);
   firstName.setFont(font);
   firstName.setAsLimit(true,10);
   firstName.setPosition({100, 100});
   sf::RectangleShape textfield = firstName.setTextField(); // Shape of textbox field follows where the firstName position is
   // textfield.setSize(sf::Vector2f(100,100)); // Set size of textbox field
+  lastName.setFont(font);
+  lastName.setAsLimit(true,10);
+  lastName.setPosition({100, 200});
+  sf::RectangleShape textfield2 = lastName.setTextField();
 
   // Setting up window
   RectangleShape basicOutline(sf::Vector2f(windowLength, windowWidth));
@@ -715,21 +720,31 @@ void loadFirstTimeUser() {
     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter) || (!firstName.isMouseOver(mainWindow, textfield) && sf::Mouse::isButtonPressed(sf::Mouse::Left))){  //Deselect but it is broken if there is no text
       firstName.setAsSelected(false);
     }
+    if (lastName.isMouseOver(mainWindow, textfield2)){ //Only can select the textbox if within region
+      lastName.setAsSelected(true);
+    }
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter) || (!lastName.isMouseOver(mainWindow, textfield2) && sf::Mouse::isButtonPressed(sf::Mouse::Left))){  //Deselect but it is broken if there is no text
+      lastName.setAsSelected(false);
+    }
 
     while (mainWindow.pollEvent(event)) {
       if (event.type == sf::Event::Closed)
         mainWindow.close();
-      if (event.type == sf::Event::TextEntered)
+      if (event.type == sf::Event::TextEntered){
         firstName.typedInput(event); // Allows user to type
+        lastName.typedInput(event);
+      }
     }
     mainWindow.clear();
     mainWindow.draw(basicOutline);
     mainWindow.draw(header);
     mainWindow.draw(textfield); // Displays textbox field
+    mainWindow.draw(textfield2);
     firstName.drawTo(mainWindow); // Displays the Textbox
+    lastName.drawTo(mainWindow);
     mainWindow.display();
   }
-  ofile << firstName.getText();
+  ofile << firstName.getText() << "." << lastName.getText();
   ofile << "\n";
   ofile.close();
 }
