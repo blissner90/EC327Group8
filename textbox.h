@@ -2,7 +2,6 @@
 #include <SFML/Graphics.hpp>
 #include <sstream>
 
-#define LBUTTON 1
 #define DELETE_KEY 8
 #define ENTER_KEY 13
 #define ESCAPE_KEY 27
@@ -11,11 +10,10 @@ class Textbox {
     public:
         Textbox() { } // Constructor for creating a textbox
 
-        Textbox(int size, sf::Color color, bool sel) { // Defines the inputs for the textbox
+        Textbox(int size, sf::Color color, bool isSelected) { // Defines the inputs for the textbox
             textbox.setCharacterSize(size);
             textbox.setFillColor(color);
-            isSelected = sel;
-            if (sel) {
+            if (isSelected) {
                 textbox.setString("_");
             }
             else {
@@ -30,17 +28,12 @@ class Textbox {
         void setPosition(sf::Vector2f pos) {
             textbox.setPosition(pos);
         }
-
-        void setLimit(bool ToF) {
-            hasLimit = ToF;
-        }
-
-        void setLimit(bool ToF, int lim) {
-            hasLimit = ToF;
+        void setAsLimit(bool truth, int lim) {
+            hasLimit = truth;
             limit = lim-1;
         }
 
-        void setSelected(bool sel) {
+        void setAsSelected(bool sel) {
             isSelected = sel;
             if(!sel) {
                 std::string t = text.str();
@@ -50,8 +43,8 @@ class Textbox {
                 }
                 textbox.setString(newT);
             }
-            else if(text.str().length() == 0){
-                textbox.setString("_");
+            else {
+                textbox.setString(text.str() + "_");
             }
         }
 
@@ -63,7 +56,7 @@ class Textbox {
             window.draw(textbox);
         }
 
-        void typedOn(sf::Event input) {
+        void typedInput(sf::Event input) {
             if(isSelected) {
                 int charTyped = input.text.unicode;
                 if(charTyped < 128) {

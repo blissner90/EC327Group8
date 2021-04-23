@@ -682,7 +682,7 @@ void loadFirstTimeUser() {
   font.loadFromFile("fonts/NewYork.ttf");
   Textbox firstName(30,sf::Color::Black, false);
   firstName.setFont(font);
-  firstName.setLimit(true,10);
+  firstName.setAsLimit(true,10);
   firstName.setPosition({100, 100});
   sf::RectangleShape textfield = firstName.setTextField(); // Shape of textbox field follows where the firstName position is
   // textfield.setSize(sf::Vector2f(100,100)); // Set size of textbox field
@@ -710,17 +710,17 @@ void loadFirstTimeUser() {
     sf::Event event;
 
     if (firstName.isMouseOver(mainWindow, textfield)){ //Only can select the textbox if within region
-      firstName.setSelected(true);
+      firstName.setAsSelected(true);
     }
     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter) || (!firstName.isMouseOver(mainWindow, textfield) && sf::Mouse::isButtonPressed(sf::Mouse::Left))){  //Deselect but it is broken if there is no text
-      firstName.setSelected(false);
+      firstName.setAsSelected(false);
     }
 
     while (mainWindow.pollEvent(event)) {
       if (event.type == sf::Event::Closed)
         mainWindow.close();
       if (event.type == sf::Event::TextEntered)
-        firstName.typedOn(event); // Allows user to type
+        firstName.typedInput(event); // Allows user to type
     }
     mainWindow.clear();
     mainWindow.draw(basicOutline);
