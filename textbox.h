@@ -5,6 +5,7 @@
 #define DELETE_KEY 8
 #define ENTER_KEY 13
 #define ESCAPE_KEY 27
+#define TAB_KEY 9
 
 class Textbox {
     public:
@@ -79,10 +80,10 @@ class Textbox {
             sf::Vector2f pos = textbox.getPosition();
             textfield.setPosition(pos);
             textfield.setSize(sf::Vector2f(200,40));
-            textfield.setFillColor(sf::Color::White);
+            textfield.setFillColor(sf::Color::Black);
 
             textfield.setOutlineThickness(5);
-            textfield.setOutlineColor(sf::Color::Black);
+            textfield.setOutlineColor(sf::Color::White);
             return textfield;
         }
 
@@ -117,7 +118,7 @@ class Textbox {
 
 
         void inputLogic(int charTyped) { // Get input from the user
-            if(charTyped != DELETE_KEY && charTyped != ENTER_KEY && charTyped != ESCAPE_KEY){
+            if(charTyped != DELETE_KEY && charTyped != ENTER_KEY && charTyped != ESCAPE_KEY && charTyped != TAB_KEY){
                 text << static_cast<char>(charTyped);
             }
             else if (charTyped == DELETE_KEY) {
