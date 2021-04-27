@@ -22,8 +22,8 @@ class Task{
         int dueTime;
         int AmPm;
         int dueInSec;
-        bool complete = false;
-        bool pointsgiven = false; //check if the points have already been given
+        bool complete;
+        int pointsgiven; //check if the points have already been given
 
     //Methods
         Task();
@@ -53,6 +53,20 @@ Task(string inTaskName, string inDescription, int inDueDate, int inDueTime, int 
   this->dueTime = inDueTime;
   this->AmPm = inAmPm;
   this->dueInSec = (dueDate * 86400) + (3600 * (dueTime + (12 * AmPm)));
+  this->complete = false;
+  this->pointsgiven = 0;
+
+    }
+
+Task(string inTaskName, string inDescription, int inDueDate, int inDueTime, int inAmPm, bool inComplete, int inPointsGiven){
+  this->taskName = inTaskName; // give the name of the task
+  this->description = inDescription;
+  this->dueDate = inDueDate;
+  this->dueTime = inDueTime;
+  this->AmPm = inAmPm;
+  this->dueInSec = (dueDate * 86400) + (3600 * (dueTime + (12 * AmPm)));
+  this->complete = inComplete;
+  this->pointsgiven = inPointsGiven;
     }
 };
 

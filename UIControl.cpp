@@ -54,6 +54,16 @@ class Profile {
       this->avatarColor = proAvatarColor;
       this->avatarShape = proAvatarShape;
     }
+
+    void updatePoints(int increase){
+      this->pointsEarned = this->pointsEarned + increase;
+      this->level = this->pointsEarned / 100;
+      this->progress = this->pointsEarned % 100;
+      if (this->pointsEarned > 100000){
+        this->level = 99;
+        this->progress = 100;
+      }
+    }
 };
 
 int getCurrTimeSec(){
@@ -368,6 +378,15 @@ int loadDefaultMainPlanner(Profile& userInformation, vector<vector<Task>>& taskI
   CircleShape tempButtonDays(8);
   tempButtonDays.setFillColor(Color::Blue);
 
+  RectangleShape progressBarOutline(sf::Vector2f(500, 30));
+  progressBarOutline.setOutlineColor(Color::Black);
+  progressBarOutline.setOutlineThickness(5);
+  progressBarOutline.setPosition(550, 850);
+
+  RectangleShape progressBar(sf::Vector2f((userInformation.progress/100.0 * 500), 30));
+  progressBar.setFillColor(Color::Blue);
+  progressBar.setPosition(550, 850);
+
   // format and scale digital representaion of time
   sf::Text digitalClock;
   sf::Font font;
@@ -409,6 +428,20 @@ int loadDefaultMainPlanner(Profile& userInformation, vector<vector<Task>>& taskI
   taskTime.setFont(font);
   taskTime.setCharacterSize(15);
 
+  sf::Text progressText;
+  progressText.setFont(font);
+  progressText.setFillColor(Color::Blue);
+  progressText.setString(to_string(userInformation.progress) + " / 100");
+  progressText.setCharacterSize(15);
+  progressText.setPosition(770, 825);
+
+  sf::Text levelText;
+  levelText.setFont(font);
+  levelText.setFillColor(Color::Black);
+  levelText.setString(to_string(userInformation.level));
+  levelText.setCharacterSize(40);
+  levelText.setPosition(480,839);
+
   while (mainWindow.isOpen()) {
     // close window if exit button is clicked
     sf::Event event;
@@ -432,6 +465,10 @@ int loadDefaultMainPlanner(Profile& userInformation, vector<vector<Task>>& taskI
     mainWindow.draw(basicOutline);
     mainWindow.draw(mainBox);
     mainWindow.draw(horizontalLine);
+    mainWindow.draw(progressBarOutline);
+    mainWindow.draw(progressBar);
+    mainWindow.draw(progressText);
+    mainWindow.draw(levelText);
 
     addTask.setFillColor(Color::Black);
 
@@ -464,15 +501,32 @@ int loadDefaultMainPlanner(Profile& userInformation, vector<vector<Task>>& taskI
         taskMain.setFillColor(Color::Black);
         double hourRemaining = (taskInformation.at(i).at(j).dueInSec - currentTime) / 3600.0;
 
-        if (hourRemaining < 0) taskMain.setFillColor(Color::Red);
         taskMain.setString("Task: " + taskInformation.at(i).at(j).taskName);
         taskMain.setPosition(110 + i * 200, 320 + j * 130);
-        mainWindow.draw(taskMain);
         char buffer[50];
-        sprintf(buffer, "Time Remaining:\n%.2f hours", hourRemaining);
+        if (hourRemaining < 0) {
+          taskMain.setFillColor(Color::Red);
+          sprintf(buffer, "Overdue By:\n%.2f hours", -hourRemaining);
+        }
+        else if (hourRemaining == 0){
+          taskMain.setFillColor(Color::Red);
+          sprintf(buffer, "Overdue By:\n%.2f hours", hourRemaining);
+        }
+        else if (hourRemaining <= 2){
+          taskMain.setFillColor(Color{255,128,0});
+          sprintf(buffer, "Time Remaining:\n%.2f hours", hourRemaining);
+        }
+        else{
+          sprintf(buffer, "Time Remaining:\n%.2f hours", hourRemaining);
+        }
+        if (taskInformation.at(i).at(j).complete) {
+          taskTime.setFillColor(Color::White);
+          taskMain.setFillColor(Color::Green);
+        }
         taskTime.setString(buffer);
         taskTime.setPosition(118 + i * 200, 360 + j * 130);
         mainWindow.draw(taskTime);
+        mainWindow.draw(taskMain);
       }
     }
     mainWindow.draw(timeOutline);
@@ -497,7 +551,6 @@ int loadDefaultMainPlanner(Profile& userInformation, vector<vector<Task>>& taskI
 // creation of default individual day planner
 int loadDefaultDayPlanner(Profile& userInformation, vector<vector<Task>>& taskInformation, string day){
 
-  // cout << day;
 
   vector<string> daysOfWeek = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
   int dayIndex = -1;
@@ -505,6 +558,7 @@ int loadDefaultDayPlanner(Profile& userInformation, vector<vector<Task>>& taskIn
     if ((daysOfWeek.at(i)).compare(day) == 0) dayIndex = i;
   }
 
+  int lengthSpecific = taskInformation.at(dayIndex).size();
 
   RectangleShape basicOutline(sf::Vector2f(windowLength, windowWidth));
 
@@ -532,11 +586,24 @@ int loadDefaultDayPlanner(Profile& userInformation, vector<vector<Task>>& taskIn
   horizontalLine.setFillColor(Color::Blue);
   horizontalLine.setPosition(100, 200);
 
+  RectangleShape checkbox(sf::Vector2f(30,30));
+  checkbox.setFillColor(Color::Black);
+  RectangleShape checkboxFilled(sf::Vector2f(30,30));
+  checkboxFilled.setFillColor(Color::Green);
 
   CircleShape tempButtonDays(20, 3);
   tempButtonDays.setFillColor(Color::Blue);
   tempButtonDays.setPosition(140, 170);
   tempButtonDays.rotate(270);
+
+  RectangleShape progressBarOutline(sf::Vector2f(500, 30));
+  progressBarOutline.setOutlineColor(Color::Black);
+  progressBarOutline.setOutlineThickness(5);
+  progressBarOutline.setPosition(550, 850);
+
+  RectangleShape progressBar(sf::Vector2f((userInformation.progress/100.0 * 500), 30));
+  progressBar.setFillColor(Color::Blue);
+  progressBar.setPosition(550, 850);
 
 
   // format and scale digital representaion of time
@@ -568,14 +635,46 @@ int loadDefaultDayPlanner(Profile& userInformation, vector<vector<Task>>& taskIn
 
   sf::Cursor cursor;
 
-  // sf::Text taskInfo;
-  // taskInfo.setFont(font);
-  // taskInfo.setCharacterSize(40);
+  sf::Text taskInfo;
+  taskInfo.setFont(font);
+  taskInfo.setCharacterSize(40);
   
-  // sf::Text taskDesc;
-  // taskDesc.setFont(font);
-  // taskDesc.setFillColor(Color::Black);
-  // taskDesc.setCharacterSize(35);
+  sf::Text taskDesc;
+  taskDesc.setFont(font);
+  taskDesc.setFillColor(Color::Black);
+  taskDesc.setCharacterSize(26);
+
+  sf::Text unmark;
+  unmark.setFont(font);
+  unmark.setFillColor(Color::Black);
+  unmark.setCharacterSize(15);
+  unmark.setString("Unmark");
+  unmark.setStyle(sf::Text::Underlined);
+
+  sf::Text deleteTask;
+  deleteTask.setFont(font);
+  deleteTask.setFillColor(Color::Red);
+  deleteTask.setCharacterSize(40);
+  deleteTask.setString("X");
+  deleteTask.setStyle(sf::Text::Bold);
+
+  sf::Text confirmation;
+  confirmation.setFont(font);
+  confirmation.setFillColor(Color::White);
+  confirmation.setCharacterSize(0);
+  confirmation.setString("   Click here to\nconfirm deletion");
+
+  sf::Text progressText;
+  progressText.setFont(font);
+  progressText.setFillColor(Color::Blue);
+  progressText.setCharacterSize(15);
+  progressText.setPosition(770, 825);
+
+  sf::Text levelText;
+  levelText.setFont(font);
+  levelText.setFillColor(Color::Black);
+  levelText.setCharacterSize(40);
+  levelText.setPosition(480,839);
 
   while (mainWindow.isOpen()) {
     // close window if exit button is clicked
@@ -606,6 +705,13 @@ int loadDefaultDayPlanner(Profile& userInformation, vector<vector<Task>>& taskIn
     mainWindow.draw(horizontalLine);
     mainWindow.draw(tempButtonDays);
     mainWindow.draw(timeOutline);
+    mainWindow.draw(progressBarOutline);
+    progressBar.setSize(sf::Vector2f((userInformation.progress/100.0 * 500), 30));
+    mainWindow.draw(progressBar);
+    progressText.setString(to_string(userInformation.progress) + " / 100");
+    mainWindow.draw(progressText);
+    levelText.setString(to_string(userInformation.level));
+    mainWindow.draw(levelText);
 
     basicAvatar.setOutlineColor(Color::Black);
 
@@ -623,19 +729,75 @@ int loadDefaultDayPlanner(Profile& userInformation, vector<vector<Task>>& taskIn
         addTask.setFillColor(Color::Green);
         if (event.type == sf::Event::MouseButtonPressed) return 2000;
     }
-    // for (int i = 0; i < taskInformation.at(dayIndex).size(); i++){
-    //     taskInfo.setFillColor(Color::Black);
-    //     taskInfo.setString("Task Subject: " + taskInformation.at(dayIndex).at(i).taskName);
-    //     string amPMlabel = {"AM","PM"};
 
-        // Task cTask = taskInformation.at(dayIndex).at(i);
-        // cout << cTask.description;
-        // taskDesc.setString("\nTask Description: " + taskInformation.at(dayIndex).at(i).description + "\nTask Due Time: "); // + to_string(taskInformation.at(dayIndex).at(i).dueTime) + " "); //amPMlabel.at(taskInformation.at(dayIndex).at(i).AmPm));
-    //     taskInfo.setPosition(150, 250 + (i*200));
-    //     taskDesc.setPosition(19, 250 + (i*200));
-    //     mainWindow.draw(taskInfo);
-    //     mainWindow.draw(taskDesc);
-       // }
+    
+    for (int i = 0; i < taskInformation.at(dayIndex).size(); i++){
+
+        int addedPoints = 0;
+        int currDiffernceSec = (taskInformation.at(dayIndex).at(i).dueInSec - getCurrTimeSec());
+
+        if (taskInformation.at(dayIndex).at(i).complete) {
+          unmark.setPosition(135, 270 + (i*145));
+          mainWindow.draw(unmark);
+          checkboxFilled.setPosition(150, 230 + (i*145));
+          mainWindow.draw(checkboxFilled);
+          if (unmark.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+            if (event.type == sf::Event::MouseButtonPressed) {
+              taskInformation.at(dayIndex).at(i).complete = !taskInformation.at(dayIndex).at(i).complete;
+              userInformation.updatePoints(-taskInformation.at(dayIndex).at(i).pointsgiven);
+              taskInformation.at(dayIndex).at(i).pointsgiven = 0;
+            }
+          }
+        }
+        else {
+          checkbox.setPosition(150, 230 + (i*145));
+          mainWindow.draw(checkbox);
+          if (checkbox.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+            if (event.type == sf::Event::MouseButtonPressed) {
+              taskInformation.at(dayIndex).at(i).complete = !taskInformation.at(dayIndex).at(i).complete;
+              if ((currDiffernceSec/3600) > 12) addedPoints = 25 + (2 * currDiffernceSec/3600);
+              else if (currDiffernceSec < 0) addedPoints = 0;
+              else addedPoints = 25;
+              taskInformation.at(dayIndex).at(i).pointsgiven = addedPoints;
+              userInformation.updatePoints(taskInformation.at(dayIndex).at(i).pointsgiven);
+            }
+          }
+        }
+
+
+
+        taskInfo.setFillColor(Color::Black);
+        taskInfo.setString("Task Subject: " + taskInformation.at(dayIndex).at(i).taskName);
+        vector<string> amPMlabel = {"AM","PM"};
+
+        Task cTask = taskInformation.at(dayIndex).at(i);
+        taskDesc.setString("\nTask Description: " + taskInformation.at(dayIndex).at(i).description + "\nTask Due Time: " + to_string(taskInformation.at(dayIndex).at(i).dueTime) + " " + amPMlabel.at(taskInformation.at(dayIndex).at(i).AmPm));
+        taskInfo.setPosition(200, 220 + (i*145));
+        taskDesc.setPosition(315, 240 + (i*145));
+        mainWindow.draw(taskInfo);
+        mainWindow.draw(taskDesc);
+
+        deleteTask.setPosition(1400, 230 + (i*145));
+        mainWindow.draw(deleteTask);
+
+        if (deleteTask.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+            if (event.type == sf::Event::MouseButtonPressed) {
+              confirmation.setPosition(1360, 290 + (i*145));
+              confirmation.setFillColor(Color::Red);
+              confirmation.setCharacterSize(13);
+            }
+          }
+        mainWindow.draw(confirmation);
+        if (confirmation.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+            if (event.type == sf::Event::MouseButtonPressed) {
+              taskInformation.at(dayIndex).erase(taskInformation.at(dayIndex).begin() + i);
+              confirmation.setCharacterSize(0);
+              confirmation.setFillColor(Color::White);
+              confirmation.setPosition(0,0);
+            }
+          }
+        
+       }
 
 
 
@@ -948,6 +1110,16 @@ int loadPostItMainPlanner(Profile& userInformation, vector<vector<Task>>& taskIn
   CircleShape tempButtonDays(8);
   tempButtonDays.setFillColor(Color::Black);
 
+  RectangleShape progressBarOutline(sf::Vector2f(500, 30));
+  progressBarOutline.setOutlineColor(Color::Black);
+  progressBarOutline.setFillColor(Color({255,255,186}));
+  progressBarOutline.setOutlineThickness(5);
+  progressBarOutline.setPosition(550, 850);
+
+  RectangleShape progressBar(sf::Vector2f((userInformation.progress/100.0 * 500), 30));
+  progressBar.setFillColor(Color::Blue);
+  progressBar.setPosition(550, 850);
+
   // format and scale digital representaion of time
   sf::Text digitalClock;
   sf::Font font;
@@ -982,10 +1154,27 @@ int loadPostItMainPlanner(Profile& userInformation, vector<vector<Task>>& taskIn
   string addTaskStr = "* Add Task";
   addTask.setString(addTaskStr);
 
-  sf::Text FAQ;
-  sf::Text selectTheme;
+  sf::Text taskMain;
+  taskMain.setFont(font);
+  taskMain.setCharacterSize(25);
 
+  sf::Text taskTime;
+  taskTime.setFont(font);
+  taskTime.setCharacterSize(15);
 
+  sf::Text progressText;
+  progressText.setFont(font);
+  progressText.setFillColor(Color::Blue);
+  progressText.setString(to_string(userInformation.progress) + " / 100");
+  progressText.setCharacterSize(15);
+  progressText.setPosition(770, 825);
+
+  sf::Text levelText;
+  levelText.setFont(font);
+  levelText.setFillColor(Color::Black);
+  levelText.setString(to_string(userInformation.level));
+  levelText.setCharacterSize(40);
+  levelText.setPosition(480,839);
 
   while (mainWindow.isOpen()) {
     // close window if exit button is clicked
@@ -1019,6 +1208,8 @@ int loadPostItMainPlanner(Profile& userInformation, vector<vector<Task>>& taskIn
 
     int dayIndex = 200;
 
+    int currentTime = getCurrTimeSec();
+
     for (int i = 0; i < 4; i++){
       tempButtonDays.setFillColor(Color::Black);
       sunStickyNote.setPosition(58 + i*380, 170);
@@ -1037,8 +1228,39 @@ int loadPostItMainPlanner(Profile& userInformation, vector<vector<Task>>& taskIn
       mainWindow.draw(sunStickyNote);
       mainWindow.draw(sunStickyNoteHeader);
       mainWindow.draw(tempButtonDays);
+      for (int j = 0; j < taskInformation.at(i).size(); j++){
+        taskTime.setFillColor(Color::Black);
+        taskMain.setFillColor(Color::Black);
+        double hourRemaining = (taskInformation.at(i).at(j).dueInSec - currentTime) / 3600.0;
+
+        taskMain.setString("Task: " + taskInformation.at(i).at(j).taskName);
+        taskMain.setPosition(65 + i * 380, 250 + (j * 60));
+        char buffer[50];
+        if (hourRemaining < 0) {
+          taskMain.setFillColor(Color::Red);
+          sprintf(buffer, "Overdue By:\n%.2f hours", -hourRemaining);
+        }
+        else if (hourRemaining == 0){
+          taskMain.setFillColor(Color::Red);
+          sprintf(buffer, "Overdue By:\n%.2f hours", hourRemaining);
+        }
+        else if (hourRemaining <= 2){
+          taskMain.setFillColor(Color{255,128,0});
+          sprintf(buffer, "Time Remaining:\n%.2f hours", hourRemaining);
+        }
+        else{
+          sprintf(buffer, "Time Remaining:\n%.2f hours", hourRemaining);
+        }
+        if (taskInformation.at(i).at(j).complete) {
+          taskTime.setFillColor(Color{color.at(0), color.at(1), color.at(2)});
+          taskMain.setFillColor(Color::Green);
+        }
+        taskTime.setString(buffer);
+        taskTime.setPosition(260 + i * 380, 250 + (j * 60));
+        mainWindow.draw(taskTime);
+        mainWindow.draw(taskMain);
+      }
     }
-  
 
     for (int i = 0; i < 3; i++){
       tempButtonDays.setFillColor(Color::Black);
@@ -1058,6 +1280,38 @@ int loadPostItMainPlanner(Profile& userInformation, vector<vector<Task>>& taskIn
       mainWindow.draw(sunStickyNote);
       mainWindow.draw(sunStickyNoteHeader);
       mainWindow.draw(tempButtonDays);
+      for (int j = 0; j < taskInformation.at(i+4).size(); j++){
+        taskTime.setFillColor(Color::Black);
+        taskMain.setFillColor(Color::Black);
+        double hourRemaining = (taskInformation.at(i+4).at(j).dueInSec - currentTime) / 3600.0;
+
+        taskMain.setString("Task: " + taskInformation.at(i+4).at(j).taskName);
+        taskMain.setPosition(285 + i * 350, 610 + j * 60);
+        char buffer[50];
+        if (hourRemaining < 0) {
+          taskMain.setFillColor(Color::Red);
+          sprintf(buffer, "Overdue By:\n%.2f hours", -hourRemaining);
+        }
+        else if (hourRemaining == 0){
+          taskMain.setFillColor(Color::Red);
+          sprintf(buffer, "Overdue By:\n%.2f hours", hourRemaining);
+        }
+        else if (hourRemaining <= 2){
+          taskMain.setFillColor(Color{255,128,0});
+          sprintf(buffer, "Time Remaining:\n%.2f hours", hourRemaining);
+        }
+        else{
+          sprintf(buffer, "Time Remaining:\n%.2f hours", hourRemaining);
+        }
+        if (taskInformation.at(i+4).at(j).complete) {
+          taskTime.setFillColor(Color(Color{color.at(0), color.at(1), color.at(2)}));
+          taskMain.setFillColor(Color::Green);
+        }
+        taskTime.setString(buffer);
+        taskTime.setPosition(478 + i * 350, 610 + j * 60);
+        mainWindow.draw(taskTime);
+        mainWindow.draw(taskMain);
+      }
     }
 
     addTask.setFillColor(Color::Black);
@@ -1079,7 +1333,15 @@ int loadPostItMainPlanner(Profile& userInformation, vector<vector<Task>>& taskIn
   return 0;
 };
 
-int loadPostItDayPlanner(Profile& userInformation, vector<vector<Task>>&, string day){
+int loadPostItDayPlanner(Profile& userInformation, vector<vector<Task>>& taskInformation, string day){
+
+  vector<string> daysOfWeek = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+  int dayIndex = -1;
+  for (int i = 0; i < daysOfWeek.size(); i++){
+    if ((daysOfWeek.at(i)).compare(day) == 0) dayIndex = i;
+  }
+
+  int lengthSpecific = taskInformation.at(dayIndex).size();
 
   RectangleShape basicOutline(sf::Vector2f(windowLength, windowWidth));
   basicOutline.setFillColor(Color(255, 255, 186));
@@ -1111,6 +1373,20 @@ int loadPostItDayPlanner(Profile& userInformation, vector<vector<Task>>&, string
   tempButtonDays.setPosition(140, 170);
   tempButtonDays.rotate(270);
 
+  RectangleShape progressBarOutline(sf::Vector2f(500, 30));
+  progressBarOutline.setFillColor(Color({255,255,186}));
+  progressBarOutline.setOutlineColor(Color::Black);
+  progressBarOutline.setOutlineThickness(5);
+  progressBarOutline.setPosition(550, 850);
+
+  RectangleShape progressBar(sf::Vector2f((userInformation.progress/100.0 * 500), 30));
+  progressBar.setFillColor(Color::Blue);
+  progressBar.setPosition(550, 850);
+
+  RectangleShape checkbox(sf::Vector2f(30,30));
+  checkbox.setFillColor(Color::Black);
+  RectangleShape checkboxFilled(sf::Vector2f(30,30));
+  checkboxFilled.setFillColor(Color::Green);
 
   // format and scale digital representaion of time
   sf::Text digitalClock;
@@ -1138,6 +1414,49 @@ int loadPostItDayPlanner(Profile& userInformation, vector<vector<Task>>&, string
   addTask.setCharacterSize(50);
   string addTaskStr = "* Add Task";
   addTask.setString(addTaskStr);
+
+  sf::Cursor cursor;
+
+  sf::Text taskInfo;
+  taskInfo.setFont(font);
+  taskInfo.setCharacterSize(40);
+  
+  sf::Text taskDesc;
+  taskDesc.setFont(font);
+  taskDesc.setFillColor(Color::Black);
+  taskDesc.setCharacterSize(26);
+
+  sf::Text unmark;
+  unmark.setFont(font);
+  unmark.setFillColor(Color::Black);
+  unmark.setCharacterSize(15);
+  unmark.setString("Unmark");
+  unmark.setStyle(sf::Text::Underlined);
+
+  sf::Text deleteTask;
+  deleteTask.setFont(font);
+  deleteTask.setFillColor(Color::Red);
+  deleteTask.setCharacterSize(40);
+  deleteTask.setString("X");
+  deleteTask.setStyle(sf::Text::Bold);
+
+  sf::Text confirmation;
+  confirmation.setFont(font);
+  confirmation.setFillColor(Color::White);
+  confirmation.setCharacterSize(0);
+  confirmation.setString("   Click here to\nconfirm deletion");
+
+  sf::Text progressText;
+  progressText.setFont(font);
+  progressText.setFillColor(Color::Blue);
+  progressText.setCharacterSize(15);
+  progressText.setPosition(770, 825);
+
+  sf::Text levelText;
+  levelText.setFont(font);
+  levelText.setFillColor(Color::Black);
+  levelText.setCharacterSize(40);
+  levelText.setPosition(480,839);
 
 
   while (mainWindow.isOpen()) {
@@ -1178,15 +1497,96 @@ int loadPostItDayPlanner(Profile& userInformation, vector<vector<Task>>&, string
     string digitalTime = std::asctime(&stdNow);
     digitalTime = digitalTime.substr(11, 8);
     digitalClock.setString(digitalTime);
+
     mainWindow.draw(basicOutline);
     mainWindow.draw(mainBox);
     mainWindow.draw(headerBox);
     mainWindow.draw(tempButtonDays);
     mainWindow.draw(timeOutline);
+    mainWindow.draw(progressBarOutline);
+    progressBar.setSize(sf::Vector2f((userInformation.progress/100.0 * 500), 30));
+    mainWindow.draw(progressBar);
+    progressText.setString(to_string(userInformation.progress) + " / 100");
+    mainWindow.draw(progressText);
+    levelText.setString(to_string(userInformation.level));
+    mainWindow.draw(levelText);
+
+    basicAvatar.setOutlineColor(Color::Black);
+
+    if (basicAvatar.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+        basicAvatar.setOutlineColor(Color::Green);
+        if (event.type == sf::Event::MouseButtonPressed) return 1;
+    }
     mainWindow.draw(basicAvatar);
     mainWindow.draw(avatarExample);
     mainWindow.draw(digitalClock);
     mainWindow.draw(headerUser);
+
+    for (int i = 0; i < taskInformation.at(dayIndex).size(); i++){
+
+        int addedPoints = 0;
+        int currDiffernceSec = (taskInformation.at(dayIndex).at(i).dueInSec - getCurrTimeSec());
+
+        if (taskInformation.at(dayIndex).at(i).complete) {
+          unmark.setPosition(135, 270 + (i*145));
+          mainWindow.draw(unmark);
+          checkboxFilled.setPosition(150, 230 + (i*145));
+          mainWindow.draw(checkboxFilled);
+          if (unmark.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+            if (event.type == sf::Event::MouseButtonPressed) {
+              taskInformation.at(dayIndex).at(i).complete = !taskInformation.at(dayIndex).at(i).complete;
+              userInformation.updatePoints(-taskInformation.at(dayIndex).at(i).pointsgiven);
+              taskInformation.at(dayIndex).at(i).pointsgiven = 0;
+            }
+          }
+        }
+        else {
+          checkbox.setPosition(150, 230 + (i*145));
+          mainWindow.draw(checkbox);
+          if (checkbox.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+            if (event.type == sf::Event::MouseButtonPressed) {
+              taskInformation.at(dayIndex).at(i).complete = !taskInformation.at(dayIndex).at(i).complete;
+              if ((currDiffernceSec/3600) > 12) addedPoints = 25 + (2 * currDiffernceSec/3600);
+              else if (currDiffernceSec < 0) addedPoints = 0;
+              else addedPoints = 25;
+              taskInformation.at(dayIndex).at(i).pointsgiven = addedPoints;
+              userInformation.updatePoints(taskInformation.at(dayIndex).at(i).pointsgiven);
+            }
+          }
+        }
+
+        taskInfo.setFillColor(Color::Black);
+        taskInfo.setString("Task Subject: " + taskInformation.at(dayIndex).at(i).taskName);
+        vector<string> amPMlabel = {"AM","PM"};
+
+        Task cTask = taskInformation.at(dayIndex).at(i);
+        taskDesc.setString("\nTask Description: " + taskInformation.at(dayIndex).at(i).description + "\nTask Due Time: " + to_string(taskInformation.at(dayIndex).at(i).dueTime) + " " + amPMlabel.at(taskInformation.at(dayIndex).at(i).AmPm));
+        taskInfo.setPosition(200, 220 + (i*145));
+        taskDesc.setPosition(315, 240 + (i*145));
+        mainWindow.draw(taskInfo);
+        mainWindow.draw(taskDesc);
+
+        deleteTask.setPosition(1400, 230 + (i*145));
+        mainWindow.draw(deleteTask);
+
+        if (deleteTask.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+            if (event.type == sf::Event::MouseButtonPressed) {
+              confirmation.setPosition(1360, 290 + (i*145));
+              confirmation.setFillColor(Color::Red);
+              confirmation.setCharacterSize(13);
+            }
+          }
+        mainWindow.draw(confirmation);
+        if (confirmation.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+            if (event.type == sf::Event::MouseButtonPressed) {
+              taskInformation.at(dayIndex).erase(taskInformation.at(dayIndex).begin() + i);
+              confirmation.setCharacterSize(0);
+              confirmation.setFillColor(Color(255,255,186));
+              confirmation.setPosition(0,0);
+            }
+          }
+        
+       }
     mainWindow.draw(addTask);
     mainWindow.display();
   }
@@ -1452,6 +1852,7 @@ int loadDarkProfile(Profile& userInformation, vector<vector<Task>>& taskInformat
 // creation of default main planner page
 int loadDarkMainPlanner(Profile& userInformation, vector<vector<Task>>& taskInformation) {
 
+   
   RectangleShape basicOutline(sf::Vector2f(windowLength, windowWidth));
   basicOutline.setFillColor(Color::Black);
 
@@ -1487,6 +1888,16 @@ int loadDarkMainPlanner(Profile& userInformation, vector<vector<Task>>& taskInfo
   CircleShape tempButtonDays(8);
   tempButtonDays.setFillColor(Color::Blue);
 
+  RectangleShape progressBarOutline(sf::Vector2f(500, 30));
+  progressBarOutline.setOutlineColor(Color::White);
+  progressBarOutline.setFillColor(Color::Black);
+  progressBarOutline.setOutlineThickness(5);
+  progressBarOutline.setPosition(550, 850);
+
+  RectangleShape progressBar(sf::Vector2f((userInformation.progress/100.0 * 500), 30));
+  progressBar.setFillColor(Color::Blue);
+  progressBar.setPosition(550, 850);
+
   // format and scale digital representaion of time
   sf::Text digitalClock;
   sf::Font font;
@@ -1520,6 +1931,28 @@ int loadDarkMainPlanner(Profile& userInformation, vector<vector<Task>>& taskInfo
   string addTaskStr = "* Add Task";
   addTask.setString(addTaskStr);
 
+  sf::Text taskMain;
+  taskMain.setFont(font);
+  taskMain.setCharacterSize(25);
+
+  sf::Text taskTime;
+  taskTime.setFont(font);
+  taskTime.setCharacterSize(15);
+
+  sf::Text progressText;
+  progressText.setFont(font);
+  progressText.setFillColor(Color::Blue);
+  progressText.setString(to_string(userInformation.progress) + " / 100");
+  progressText.setCharacterSize(15);
+  progressText.setPosition(770, 825);
+
+  sf::Text levelText;
+  levelText.setFont(font);
+  levelText.setFillColor(Color::White);
+  levelText.setString(to_string(userInformation.level));
+  levelText.setCharacterSize(40);
+  levelText.setPosition(480,839);
+
 
   while (mainWindow.isOpen()) {
     // close window if exit button is clicked
@@ -1544,6 +1977,10 @@ int loadDarkMainPlanner(Profile& userInformation, vector<vector<Task>>& taskInfo
     mainWindow.draw(basicOutline);
     mainWindow.draw(mainBox);
     mainWindow.draw(horizontalLine);
+    mainWindow.draw(progressBarOutline);
+    mainWindow.draw(progressBar);
+    mainWindow.draw(progressText);
+    mainWindow.draw(levelText);
 
     addTask.setFillColor(Color::White);
 
@@ -1568,6 +2005,44 @@ int loadDarkMainPlanner(Profile& userInformation, vector<vector<Task>>& taskInfo
         basicAvatar.setOutlineColor(Color::Green);
         if (event.type == sf::Event::MouseButtonPressed) return 5;
     }
+
+    int currentTime = getCurrTimeSec();
+
+      for (int i = 0; i < 7; i++){
+        for (int j = 0; j < taskInformation.at(i).size(); j++){
+        taskTime.setFillColor(Color::White);
+        taskMain.setFillColor(Color::White);
+        double hourRemaining = (taskInformation.at(i).at(j).dueInSec - currentTime) / 3600.0;
+
+        taskMain.setString("Task: " + taskInformation.at(i).at(j).taskName);
+        taskMain.setPosition(110 + i * 200, 320 + j * 130);
+        char buffer[50];
+        if (hourRemaining < 0) {
+          taskMain.setFillColor(Color::Red);
+          sprintf(buffer, "Overdue By:\n%.2f hours", -hourRemaining);
+        }
+        else if (hourRemaining == 0){
+          taskMain.setFillColor(Color::Red);
+          sprintf(buffer, "Overdue By:\n%.2f hours", hourRemaining);
+        }
+        else if (hourRemaining <= 2){
+          taskMain.setFillColor(Color{255,128,0});
+          sprintf(buffer, "Time Remaining:\n%.2f hours", hourRemaining);
+        }
+        else{
+          sprintf(buffer, "Time Remaining:\n%.2f hours", hourRemaining);
+        }
+        if (taskInformation.at(i).at(j).complete) {
+          taskTime.setFillColor(Color::Black);
+          taskMain.setFillColor(Color::Green);
+        }
+        taskTime.setString(buffer);
+        taskTime.setPosition(118 + i * 200, 360 + j * 130);
+        mainWindow.draw(taskTime);
+        mainWindow.draw(taskMain);
+      }
+    }
+
     mainWindow.draw(timeOutline);
     mainWindow.draw(basicAvatar);
     mainWindow.draw(avatarExample);
@@ -1590,9 +2065,16 @@ int loadDarkMainPlanner(Profile& userInformation, vector<vector<Task>>& taskInfo
 // creation of default individual day planner
 int loadDarkDayPlanner(Profile& userInformation, vector<vector<Task>>& taskInformation, string day){
 
+  vector<string> daysOfWeek = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+  int dayIndex = -1;
+  for (int i = 0; i < daysOfWeek.size(); i++){
+    if ((daysOfWeek.at(i)).compare(day) == 0) dayIndex = i;
+  }
+
+  int lengthSpecific = taskInformation.at(dayIndex).size();
+
   RectangleShape basicOutline(sf::Vector2f(windowLength, windowWidth));
   basicOutline.setFillColor(Color::Black);
-
 
   RectangleShape timeOutline(sf::Vector2f(245, 75));
   timeOutline.setOutlineColor(Color::White);
@@ -1619,11 +2101,25 @@ int loadDarkDayPlanner(Profile& userInformation, vector<vector<Task>>& taskInfor
   horizontalLine.setFillColor(Color::Blue);
   horizontalLine.setPosition(100, 200);
 
+  RectangleShape checkbox(sf::Vector2f(30,30));
+  checkbox.setFillColor(Color::White);
+  RectangleShape checkboxFilled(sf::Vector2f(30,30));
+  checkboxFilled.setFillColor(Color::Green);
 
   CircleShape tempButtonDays(20, 3);
   tempButtonDays.setFillColor(Color::Blue);
   tempButtonDays.setPosition(140, 170);
   tempButtonDays.rotate(270);
+
+  RectangleShape progressBarOutline(sf::Vector2f(500, 30));
+  progressBarOutline.setOutlineColor(Color::White);
+  progressBarOutline.setFillColor(Color::Black);
+  progressBarOutline.setOutlineThickness(5);
+  progressBarOutline.setPosition(550, 850);
+
+  RectangleShape progressBar(sf::Vector2f((userInformation.progress/100.0 * 500), 30));
+  progressBar.setFillColor(Color::Blue);
+  progressBar.setPosition(550, 850);
 
 
   // format and scale digital representaion of time
@@ -1655,6 +2151,47 @@ int loadDarkDayPlanner(Profile& userInformation, vector<vector<Task>>& taskInfor
 
   sf::Cursor cursor;
 
+  sf::Text taskInfo;
+  taskInfo.setFont(font);
+  taskInfo.setCharacterSize(40);
+  
+  sf::Text taskDesc;
+  taskDesc.setFont(font);
+  taskDesc.setFillColor(Color::White);
+  taskDesc.setCharacterSize(26);
+
+  sf::Text unmark;
+  unmark.setFont(font);
+  unmark.setFillColor(Color::White);
+  unmark.setCharacterSize(15);
+  unmark.setString("Unmark");
+  unmark.setStyle(sf::Text::Underlined);
+
+  sf::Text deleteTask;
+  deleteTask.setFont(font);
+  deleteTask.setFillColor(Color::Red);
+  deleteTask.setCharacterSize(40);
+  deleteTask.setString("X");
+  deleteTask.setStyle(sf::Text::Bold);
+
+  sf::Text confirmation;
+  confirmation.setFont(font);
+  confirmation.setFillColor(Color::White);
+  confirmation.setCharacterSize(0);
+  confirmation.setString("   Click here to\nconfirm deletion");
+
+  sf::Text progressText;
+  progressText.setFont(font);
+  progressText.setFillColor(Color::Blue);
+  progressText.setCharacterSize(15);
+  progressText.setPosition(770, 825);
+
+  sf::Text levelText;
+  levelText.setFont(font);
+  levelText.setFillColor(Color::White);
+  levelText.setCharacterSize(40);
+  levelText.setPosition(480,839);
+
 
   while (mainWindow.isOpen()) {
     // close window if exit button is clicked
@@ -1675,6 +2212,7 @@ int loadDarkDayPlanner(Profile& userInformation, vector<vector<Task>>& taskInfor
     string digitalTime = std::asctime(&stdNow);
     digitalTime = digitalTime.substr(11, 8);
     digitalClock.setString(digitalTime);
+
     tempButtonDays.setFillColor(Color::Blue);
     if (tempButtonDays.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
       tempButtonDays.setFillColor(Color::Green);
@@ -1685,6 +2223,14 @@ int loadDarkDayPlanner(Profile& userInformation, vector<vector<Task>>& taskInfor
     mainWindow.draw(horizontalLine);
     mainWindow.draw(tempButtonDays);
     mainWindow.draw(timeOutline);
+    mainWindow.draw(progressBarOutline);
+    progressBar.setSize(sf::Vector2f((userInformation.progress/100.0 * 500), 30));
+    mainWindow.draw(progressBar);
+    progressText.setString(to_string(userInformation.progress) + " / 100");
+    mainWindow.draw(progressText);
+    levelText.setString(to_string(userInformation.level));
+    mainWindow.draw(levelText);
+
 
     basicAvatar.setOutlineColor(Color::White);
 
@@ -1703,6 +2249,72 @@ int loadDarkDayPlanner(Profile& userInformation, vector<vector<Task>>& taskInfor
         if (event.type == sf::Event::MouseButtonPressed) return 2000;
     }
 
+    for (int i = 0; i < taskInformation.at(dayIndex).size(); i++){
+
+        int addedPoints = 0;
+        int currDiffernceSec = (taskInformation.at(dayIndex).at(i).dueInSec - getCurrTimeSec());
+
+        if (taskInformation.at(dayIndex).at(i).complete) {
+          unmark.setPosition(135, 270 + (i*145));
+          mainWindow.draw(unmark);
+          checkboxFilled.setPosition(150, 230 + (i*145));
+          mainWindow.draw(checkboxFilled);
+          if (unmark.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+            if (event.type == sf::Event::MouseButtonPressed) {
+              taskInformation.at(dayIndex).at(i).complete = !taskInformation.at(dayIndex).at(i).complete;
+              userInformation.updatePoints(-taskInformation.at(dayIndex).at(i).pointsgiven);
+              taskInformation.at(dayIndex).at(i).pointsgiven = 0;
+            }
+          }
+        }
+        else {
+          checkbox.setPosition(150, 230 + (i*145));
+          mainWindow.draw(checkbox);
+          if (checkbox.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+            if (event.type == sf::Event::MouseButtonPressed) {
+              taskInformation.at(dayIndex).at(i).complete = !taskInformation.at(dayIndex).at(i).complete;
+              if ((currDiffernceSec/3600) > 12) addedPoints = 25 + (2 * currDiffernceSec/3600);
+              else if (currDiffernceSec < 0) addedPoints = 0;
+              else addedPoints = 25;
+              taskInformation.at(dayIndex).at(i).pointsgiven = addedPoints;
+              userInformation.updatePoints(taskInformation.at(dayIndex).at(i).pointsgiven);
+            }
+          }
+        }
+
+        taskInfo.setFillColor(Color::White);
+        taskInfo.setString("Task Subject: " + taskInformation.at(dayIndex).at(i).taskName);
+        vector<string> amPMlabel = {"AM","PM"};
+
+        Task cTask = taskInformation.at(dayIndex).at(i);
+        taskDesc.setString("\nTask Description: " + taskInformation.at(dayIndex).at(i).description + "\nTask Due Time: " + to_string(taskInformation.at(dayIndex).at(i).dueTime) + " " + amPMlabel.at(taskInformation.at(dayIndex).at(i).AmPm));
+        taskInfo.setPosition(200, 220 + (i*145));
+        taskDesc.setPosition(315, 240 + (i*145));
+        mainWindow.draw(taskInfo);
+        mainWindow.draw(taskDesc);
+
+        deleteTask.setPosition(1400, 230 + (i*145));
+        mainWindow.draw(deleteTask);
+
+        if (deleteTask.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+            if (event.type == sf::Event::MouseButtonPressed) {
+              confirmation.setPosition(1360, 290 + (i*145));
+              confirmation.setFillColor(Color::Red);
+              confirmation.setCharacterSize(13);
+            }
+          }
+        mainWindow.draw(confirmation);
+        if (confirmation.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+            if (event.type == sf::Event::MouseButtonPressed) {
+              taskInformation.at(dayIndex).erase(taskInformation.at(dayIndex).begin() + i);
+              confirmation.setCharacterSize(0);
+              confirmation.setFillColor(Color::Black);
+              confirmation.setPosition(0,0);
+            }
+          }
+        
+       }
+
     mainWindow.draw(addTask);
     mainWindow.display();
   }
@@ -1710,6 +2322,10 @@ int loadDarkDayPlanner(Profile& userInformation, vector<vector<Task>>& taskInfor
 }
 
 int loadAddTask(Profile& userInformation, vector<vector<Task>>& allTaskData) {
+
+  CircleShape backButton(20, 3);
+  backButton.setPosition(50, 60);
+  backButton.rotate(270);
 
   sf::Text morePrompt;
   sf::Font font;
@@ -1753,6 +2369,12 @@ int loadAddTask(Profile& userInformation, vector<vector<Task>>& allTaskData) {
   sf::Text ampm;
   ampm.setCharacterSize(60);
   ampm.setFont(font);
+
+  sf::Text maxChar;
+  maxChar.setFont(font);
+  maxChar.setString("(5 character max)\n\n\n\n\n\n\n\n(40 character max)");
+  maxChar.setCharacterSize(12);
+  maxChar.setPosition(30, 422);
 
   Textbox taskNameTB(60,sf::Color::White, false);
   taskNameTB.setFont(font);
@@ -1798,6 +2420,15 @@ int loadAddTask(Profile& userInformation, vector<vector<Task>>& allTaskData) {
       }
     }
     mainWindow.clear();
+
+    backButton.setFillColor(Color::White);
+
+    if (backButton.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+      backButton.setFillColor(Color::Green);
+      if (event.type == sf::Event::MouseButtonPressed) return (userInformation.theme * 2);
+    }
+
+    mainWindow.draw(backButton);
 
 
 
@@ -1845,7 +2476,7 @@ int loadAddTask(Profile& userInformation, vector<vector<Task>>& allTaskData) {
 
     mainWindow.draw(entryPrompt);
     mainWindow.draw(morePrompt);
-
+    mainWindow.draw(maxChar);
 
     mainWindow.draw(textfieldTN); // Displays textbox field
     mainWindow.draw(textfieldTD);
@@ -1878,15 +2509,28 @@ int loadAddTask(Profile& userInformation, vector<vector<Task>>& allTaskData) {
         isCompleted.setFillColor(Color::Red);
         }
       else{
+        if (taskDescTB.getText().compare("UUDDLRLRBA") == 0) isCompleted.setString("PROCEED WITH CAUTION:");
+        else isCompleted.setString("ADD TASK TO PLANNER");
         isCompleted.setPosition(1150, 840);
-        isCompleted.setString("ADD TASK TO PLANNER");
         isCompleted.setFillColor(Color::White);
         isCompleted.setCharacterSize(30);
         if (isCompleted.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
           isCompleted.setFillColor(Color::Green);
           if (event.type == sf::Event::MouseButtonPressed){
+            if (taskDescTB.getText().compare("UUDDLRLRBA") == 0) return -2;
             Task createdTask = Task(taskNameTB.getText(), taskDescTB.getText(), selectedDay, selectedHour, selectedAPM); 
             allTaskData.at(selectedDay).push_back(createdTask);
+            if (allTaskData.at(selectedDay).size() > 1){
+              for (int i = 0; i < allTaskData.at(selectedDay).size()-1; i++){
+                for (int j = 0; j < allTaskData.at(selectedDay).size() - i -1; j++){
+                  if (allTaskData.at(selectedDay).at(j).dueInSec > allTaskData.at(selectedDay).at(j+1).dueInSec){
+                      Task temp = allTaskData.at(selectedDay).at(j);
+                      allTaskData.at(selectedDay).at(j) = allTaskData.at(selectedDay).at(j+1);
+                      allTaskData.at(selectedDay).at(j+1) =  temp;
+                  }
+                }
+              }
+            }
             return userInformation.theme * 2;
           }
         }
@@ -1924,14 +2568,20 @@ int loadFirstTimeUser() {
   morePrompt.setFont(font);
   morePrompt.setPosition(25, 190);
   morePrompt.setFillColor(Color::White);
-  morePrompt.setString("Our records indicate that this your first time accessing our service.\nPlease tell us a bit about yourself:\n\nFIRST NAME:\n\nLAST NAME:\n\n FAVORITE COLOR:\n\n FAVORITE SHAPE:");
-  morePrompt.setCharacterSize(50);
+  morePrompt.setString("Our records indicate that this is your first time accessing our service.\nPlease tell us a bit about yourself:\n\nFIRST NAME:\n\nLAST NAME:\n\nFAVORITE COLOR:\n\nFAVORITE SHAPE:");
+  morePrompt.setCharacterSize(49);
 
   sf::Text maxChar;
   maxChar.setFont(font);
   maxChar.setFillColor(Color::White);
   maxChar.setString("(10 character max)");
   maxChar.setCharacterSize(12);
+
+  sf::Text permanent;
+  permanent.setFont(font);
+  permanent.setString("(NAME CANNOT BE CHANGED)");
+  permanent.setCharacterSize(13);
+  permanent.setPosition(85, 555);
 
   sf::Text isCompleted;
   isCompleted.setFont(font);
@@ -2018,7 +2668,7 @@ int loadFirstTimeUser() {
 
       possibleColors.setFillColor(Color{allPossibleColors.at(i).at(0), allPossibleColors.at(i).at(1), allPossibleColors.at(i).at(2)});
 
-
+      mainWindow.draw(permanent);
       mainWindow.draw(possibleColors);
       mainWindow.draw(possibleShapes);
 
@@ -2036,7 +2686,7 @@ int loadFirstTimeUser() {
         isCompleted.setCharacterSize(20);
       }
     else{
-        isCompleted.setString("CONTINUE");
+        isCompleted.setString("CONTINUE:");
         isCompleted.setFillColor(Color::White);
         isCompleted.setCharacterSize(40);
         if (isCompleted.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
@@ -2071,12 +2721,12 @@ int loadFAQ(Profile& userInformation){
   backButton.rotate(270);
 
   CircleShape exampleBackButton(10, 3);
-  exampleBackButton.setPosition(842, 435);
+  exampleBackButton.setPosition(842, 300);
   exampleBackButton.rotate(270);
   exampleBackButton.setFillColor(Color::White);
 
   CircleShape exampleBackButton2(10);
-  exampleBackButton2.setPosition(909, 415);
+  exampleBackButton2.setPosition(909, 280);
   exampleBackButton2.setFillColor(Color::White);
 
   sf::Font font;
@@ -2084,7 +2734,7 @@ int loadFAQ(Profile& userInformation){
 
   sf::Text welcomeMessage;
   welcomeMessage.setFont(font);
-  welcomeMessage.setPosition(375, 45);
+  welcomeMessage.setPosition(375, 10);
   welcomeMessage.setFillColor(Color::White);
   welcomeMessage.setOutlineThickness(5);
   welcomeMessage.setOutlineColor(Color::Blue);
@@ -2093,17 +2743,17 @@ int loadFAQ(Profile& userInformation){
 
   sf::Text answersPrompt;
   answersPrompt.setFont(font);
-  answersPrompt.setPosition(45, 150);
+  answersPrompt.setPosition(45, 100);
   answersPrompt.setFillColor(Color::White);
-  answersPrompt.setString("\n\nA: The Weekly Planner is designed for you to keep track of a weekly set of events of to-do's which reset every week. To add a task,\nsimply click 'Add Task' on either the week or day planner and fill in the requested information. We will handle formatting the\ntask grid and the time remaining!\n\n\n\n\nA: Navigation throughout the app is handled by buttons marked as           ,           , or the profile icon. These buttons will change color\n when hovered over indicating their function.\n\n\n\n\nA: Leveling up occurs through the completion of tasks and marking them within the application. Every 100 points results in a level up\n(check the progress bar for updates) and points are assigned based on whether tasks are completed early for 25 points, on time\n(within 12 hours of due date) for 10 points, or late for 0 points. Higher levels unlock more customizable options.\n\n\n\n\nA: 01001101 01100001 01111001 01100010 01100101 00100000 01110100 01101000 01100101 00100000 01001011 01101111\n01101110 01100001 01101101 01101001 00100000 01000011 01101111 01100100 01100101 00100000 01101101 01101001\n01100111 01101000 01110100 00100000 01101000 01100101 01101100 01110000 00101110 00101110 00101110");
+  answersPrompt.setString("\nA: The Weekly Planner is designed for you to keep track of a weekly set of events of to-do's which reset every Sunday at midnight.\nTo add a task, simply click 'Add Task' on either the week or day planner and fill in the requested information. We will handle\nformatting the task grid and the time remaining!\n\n\nA: Navigation throughout the app is handled by buttons marked as           ,           , or the profile icon. These buttons will change color\nwhen hovered over indicating their function.\n\n\nA: Tasks can be marked as completed on the Day planner page by clicking the bullet point in front of the specific task.\nThis click will be accompanied by a change in color of the bullet point indicating successful completion.\n\n\nA: Leveling up occurs through the completion of tasks and marking them within the application. Every 100 points results in a level up\n(check the progress bar for updates) and points are assigned based on whether tasks are completed on time for 25 points\n(with bonus points for submitting more than 12 hours before due date) or late for 0 points. Higher levels unlock more customizable\noptions.\n\n\nA: The current implementation of OnTrack allows a maximum of 4 concurrent tasks for a given day. If you have more than 4 tasks we \nrecommend deleting a task once it is completed on the individual day planner page. This will free up a task slot and will not remove\nthe points received for task completion.\n\n\nA: 01001011 01101111 01101110 01100001 01101101 01101001 00100000 01000011 01101111 01100100 01100101");
   answersPrompt.setCharacterSize(25);
 
   sf::Text questionsPrompt;
   questionsPrompt.setFont(font);
   questionsPrompt.setStyle(sf::Text::Underlined);
-  questionsPrompt.setPosition(45, 150);
+  questionsPrompt.setPosition(45, 100);
   questionsPrompt.setFillColor(Color::White);
-  questionsPrompt.setString("Q: How do I use the Weekly Planner?\n\n\n\n\n\n\nQ: How do I navigate through the different pages?\n\n\n\n\n\nQ: How do I level up? How do points work?\n\n\n\n\n\n\nQ: I hear there is a really cool GOD MODE Easter Egg...");
+  questionsPrompt.setString("Q: How do I use the Weekly Planner?\n\n\n\n\nQ: How do I navigate through the different pages?\n\n\n\nQ: How do I mark a task as complete?\n\n\n\nQ: How do I level up? How do points work?\n\n\n\n\n\nQ: How can I add more than 4 tasks per day?\n\n\n\n\nQ: I hear there is a really cool GOD MODE Easter Egg...");
   questionsPrompt.setCharacterSize(25);
 
   while (mainWindow.isOpen()){
@@ -2136,6 +2786,221 @@ int loadFAQ(Profile& userInformation){
   
   };
 
+void loadGodMode() {
+
+  RectangleShape basicOutline(sf::Vector2f(windowLength, windowWidth));
+  basicOutline.setFillColor(Color{110, 255, 255});
+
+  RectangleShape possibleColors(sf::Vector2f(30, 30));
+
+  RectangleShape timeOutline(sf::Vector2f(245, 75));
+  timeOutline.setOutlineColor(Color::Black);
+  timeOutline.setOutlineThickness(5);
+  timeOutline.setPosition(1300,800);
+
+
+  RectangleShape progressBarOutline(sf::Vector2f(550, 30));
+  progressBarOutline.setOutlineColor(Color::Black);
+  progressBarOutline.setOutlineThickness(5);
+  progressBarOutline.setPosition(1000, 405);
+
+  RectangleShape progressBar(sf::Vector2f((550), 30));
+  progressBar.setFillColor(Color::Blue);
+  progressBar.setPosition(1000, 405);
+
+  CircleShape backButton(20, 3);
+  backButton.setPosition(50, 60);
+  backButton.rotate(270);
+
+  RectangleShape basicAvatar(sf::Vector2f(268, 284));
+  basicAvatar.setOutlineColor(Color::Black);
+  basicAvatar.setOutlineThickness(8);
+  basicAvatar.setPosition(80, 130);
+
+  sf::Image profCarruthers;
+  profCarruthers.create(800,800,sf::Color::Yellow);
+  profCarruthers.loadFromFile("GodMode2.jpg");
+
+  sf::Texture proftexture;
+  proftexture.loadFromImage(profCarruthers);
+
+  sf::Sprite profsprite;
+  profsprite.setTexture(proftexture);
+  auto profsize = proftexture.getSize();
+  profsprite.setOrigin(profsize.x/2, profsize.y/2);
+
+  sf::Font font;
+  font.loadFromFile("/usr/share/fonts/truetype/ubuntu/Ubuntu-BI.ttf");
+  sf::Text progressText;
+  progressText.setFont(font);
+  progressText.setFillColor(Color::Blue);
+  progressText.setString("100 / 100");
+  progressText.setCharacterSize(15);
+  progressText.setPosition(1250, 445);
+
+  sf::Text digitalClock;
+  digitalClock.setFont(font);
+  digitalClock.setPosition(1300, 800);
+  digitalClock.setFillColor(Color::Black);
+  digitalClock.setCharacterSize(60);
+
+  sf::Text profileHeader;
+  profileHeader.setFont(font);
+  profileHeader.setPosition(450, 22);
+  profileHeader.setFillColor(Color::Black);
+  profileHeader.setString("Profile Information:");
+  profileHeader.setCharacterSize(65);
+
+  sf::Text profileSpecifics;
+  string profileInfo = "Name: Jeffrey Carruthers\n\nPoints Earned: 10000000000000\n\nProfile Level: 42\n\nProgress to Next Level:";
+  profileSpecifics.setFont(font);
+  profileSpecifics.setPosition(500, 115);
+  profileSpecifics.setFillColor(Color::Black);
+  profileSpecifics.setString(profileInfo);
+  profileSpecifics.setCharacterSize(40);
+
+  sf::Text settingsHeader;
+  settingsHeader.setFont(font);
+  settingsHeader.setPosition(50, 450);
+  settingsHeader.setFillColor(Color::Black);
+  settingsHeader.setString("Settings and Information:");
+  settingsHeader.setCharacterSize(65);
+
+  sf::Text FAQ;
+  FAQ.setFont(font);
+  FAQ.setPosition(100, 550);
+  FAQ.setString("Go to FAQ");
+  FAQ.setCharacterSize(40);
+
+  sf::Text changeTheme;
+  changeTheme.setFont(font);
+  changeTheme.setPosition(100, 625);
+  changeTheme.setString("Select Theme:\n\nSelect Avatar Shape:\n\nSelect Avatar Color:");
+  changeTheme.setCharacterSize(40);
+  changeTheme.setFillColor(Color::Black);
+
+  sf::Text defaultLabel;
+  defaultLabel.setFont(font);
+  defaultLabel.setPosition(425, 625);
+  defaultLabel.setString("Default");
+  defaultLabel.setCharacterSize(40);
+  defaultLabel.setFillColor(Color::Black);
+
+  sf::Text postItLabel;
+  postItLabel.setFont(font);
+  postItLabel.setPosition(671, 625);
+  postItLabel.setString("Post-It");
+  postItLabel.setCharacterSize(40);
+
+  sf::Text darkLabel;
+  darkLabel.setFont(font);
+  darkLabel.setPosition(900, 625);
+  darkLabel.setString("Dark");
+  darkLabel.setCharacterSize(40);
+
+  sf::Text godMode;
+  godMode.setFont(font);
+  godMode.setCharacterSize(25);
+  godMode.setString("WELCOME TO GOD MODE");
+  godMode.setFillColor(Color::Black);
+  godMode.setPosition(66, 90);
+
+  vector<sf::Vector2f> savedSpritePositions;
+
+
+  while (mainWindow.isOpen()) {
+    // close window if exit button is clicked
+    sf::Event event;
+    while (mainWindow.pollEvent(event)) {
+      if (event.type == sf::Event::Closed){
+
+        mainWindow.close();
+        return;
+      }
+    }
+
+    std::time_t stdTime = std::time(NULL);  // get new time
+    std::tm stdNow = *std::localtime(&stdTime);
+
+    mainWindow.clear();
+    mainWindow.draw(basicOutline);
+
+    // format digital time on clock
+    string digitalTime = std::asctime(&stdNow);
+    digitalTime = digitalTime.substr(11, 8);
+    digitalClock.setString(digitalTime);
+
+    backButton.setFillColor(Color::Black);
+    if (backButton.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+      backButton.setFillColor(Color::Green);
+    }
+
+    FAQ.setFillColor(Color::Black);
+    if (FAQ.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+      FAQ.setFillColor(Color::Green);
+    }
+
+    defaultLabel.setFillColor(Color::Black);
+    if (defaultLabel.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+      defaultLabel.setFillColor(Color::Green);
+    }
+    postItLabel.setFillColor(Color::Black);
+    if (postItLabel.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+      postItLabel.setFillColor(Color::Green);
+    }
+    darkLabel.setFillColor(Color::Black);
+    if (darkLabel.getGlobalBounds().contains(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)))){
+      darkLabel.setFillColor(Color::Green);
+    }
+
+
+
+    for (int i = 0; i < 6; i++){
+      int j = i + 3;
+      CircleShape possibleShapes(30, j);
+      possibleShapes.setPosition(505 + i*100, 810);
+      possibleColors.setPosition(520 + i*100, 728);
+
+      possibleColors.setFillColor(Color{allPossibleColors.at(i).at(0), allPossibleColors.at(i).at(1), allPossibleColors.at(i).at(2)});
+      possibleShapes.setFillColor(Color::Black);
+      mainWindow.draw(possibleShapes);
+      mainWindow.draw(possibleColors);
+    }
+
+    // draw clock componentse
+    mainWindow.draw(backButton);
+    mainWindow.draw(timeOutline);
+    mainWindow.draw(digitalClock);
+    mainWindow.draw(profileHeader);
+    mainWindow.draw(profileSpecifics);
+    mainWindow.draw(settingsHeader);
+    mainWindow.draw(progressBarOutline);
+    mainWindow.draw(progressBar);
+    mainWindow.draw(progressText);
+    mainWindow.draw(FAQ);
+    mainWindow.draw(changeTheme);
+    mainWindow.draw(defaultLabel);
+    mainWindow.draw(postItLabel);
+    mainWindow.draw(darkLabel);
+    mainWindow.draw(basicAvatar);
+    for (int i = 0; i < 2; i++){
+      for (int j = 0; j < 2; j++){
+        profsprite.setPosition(148 + i*134,200+j*142);
+        mainWindow.draw(profsprite);
+      }
+    }
+    mainWindow.draw(godMode);
+
+    if ((event.type == sf::Event::MouseButtonPressed) && savedSpritePositions.size() < 50) savedSpritePositions.push_back(mainWindow.mapPixelToCoords(sf::Mouse::getPosition(mainWindow)));
+    
+    for (int i = 0; i < savedSpritePositions.size(); i++){
+      profsprite.setPosition(savedSpritePositions.at(i));
+      mainWindow.draw(profsprite);
+    }
+    mainWindow.display();
+  }
+  return;
+}
 
 
 
@@ -2183,7 +3048,7 @@ int initialStartUp() {
         }
         std::replace(taskLine.at(1).begin(), taskLine.at(1).end(), '.', ' ');
         std::replace(taskLine.at(2).begin(), taskLine.at(2).end(), '.', ' ');
-        Task nTask = Task(taskLine.at(1), taskLine.at(2), stoi(taskLine.at(3)), stoi(taskLine.at(4)), stoi(taskLine.at(5)));
+        Task nTask = Task(taskLine.at(1), taskLine.at(2), stoi(taskLine.at(3)), stoi(taskLine.at(4)), stoi(taskLine.at(5)), bool(stoi(taskLine.at(6))), stoi(taskLine.at(7)));
         allTaskData.at(stoi(taskLine.at(3))).push_back(nTask);
       }
     }
@@ -2192,7 +3057,7 @@ int initialStartUp() {
   Profile allUserInformation = Profile(profileLine.at(1), stoi(profileLine.at(2)), stoi(profileLine.at(3)), stoi(profileLine.at(4)), stoi(profileLine.at(5)), stoi(profileLine.at(6)), stoi(profileLine.at(7)));
   
   int nextState = vectorOfFunc.at(allUserInformation.theme * 2)(allUserInformation, allTaskData);
-  while (nextState != -1){
+  while (nextState >= 0){
     if (nextState < 10) nextState = vectorOfFunc.at(nextState)(allUserInformation, allTaskData);
     else if (nextState < 200) nextState = vectorOfDayFunc.at(0)(allUserInformation, allTaskData, daysOfWeek.at(nextState%100));
     else if (nextState < 300) nextState = vectorOfDayFunc.at(1)(allUserInformation, allTaskData, daysOfWeek.at(nextState%100));
@@ -2201,17 +3066,28 @@ int initialStartUp() {
     else if (nextState == 2000) nextState = loadAddTask(allUserInformation, allTaskData);
   }
   std::ofstream ofile;
-            ofile.open("savedData.txt", std::ios_base::trunc);
-            string nameAsInput = allUserInformation.name;
-            replace(nameAsInput.begin(), nameAsInput.end(), ' ', '.');
-            ofile << "Profile\t" << nameAsInput << "\t" << allUserInformation.pointsEarned << "\t" << allUserInformation.level << "\t" << allUserInformation.progress << "\t" << allUserInformation.theme << "\t" << allUserInformation.avatarColor <<  "\t" << allUserInformation.avatarShape << "\n";
-            for (int i = 0; i < 7; i++){
-              for (int j = 0; j < allTaskData.at(i).size(); j++){
-                Task cTask = allTaskData.at(i).at(j);
-                replace(cTask.taskName.begin(), cTask.taskName.end(), ' ', '.');
-                replace(cTask.description.begin(), cTask.description.end(), ' ', '.');
-                ofile << "Task\t" << cTask.taskName << "\t" << cTask.description  << "\t" << cTask.dueDate << "\t" << cTask.dueTime << "\t" << cTask.AmPm << "\t" << cTask.complete << "\t" << cTask.pointsgiven << "\n";
-              }
-            }
+  ofile.open("savedData.txt", std::ios_base::trunc);
+  string nameAsInput = allUserInformation.name;
+  replace(nameAsInput.begin(), nameAsInput.end(), ' ', '.');
+  ofile << "Profile\t" << nameAsInput << "\t" << allUserInformation.pointsEarned << "\t" << allUserInformation.level << "\t" << allUserInformation.progress << "\t" << allUserInformation.theme << "\t" << allUserInformation.avatarColor <<  "\t" << allUserInformation.avatarShape << "\n";
+  for (int i = 0; i < 7; i++){
+    for (int j = 0; j < allTaskData.at(i).size(); j++){
+        Task cTask = allTaskData.at(i).at(j);
+        replace(cTask.taskName.begin(), cTask.taskName.end(), ' ', '.');
+        replace(cTask.description.begin(), cTask.description.end(), ' ', '.');
+        ofile << "Task\t" << cTask.taskName << "\t" << cTask.description  << "\t" << cTask.dueDate << "\t" << cTask.dueTime << "\t" << cTask.AmPm << "\t" << cTask.complete << "\t" << cTask.pointsgiven << "\n";
+    }
+  }
+
+  time_t epochtime = time(NULL);
+  std::tm etime = *localtime(&epochtime);
+  string currentDayStr = (ctime(&epochtime));
+  currentDayStr = currentDayStr.substr(0,3);
+  ofile << to_string(epochtime) <<"\t" << currentDayStr << "\n";
+
+  if (nextState == -2){
+    loadGodMode();
+  }
+
   return 0;
 }
