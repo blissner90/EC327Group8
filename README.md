@@ -6,7 +6,7 @@ OnTrack is a weekly planner app that can help users schedule their tasks through
 
 ## Installation and Running the Code
 
-$ git clone https://github.com/blissner90/EC327Group8/ <br />
+$ git clone https://github.com/blissner90/EC327Group8.git <br />
 $ cd EC327Group8 <br />
 $ make <br />
 $ startup <br />
